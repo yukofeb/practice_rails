@@ -1,2 +1,6 @@
 general:
   build_dir: sample_app
+
+machine:
+  ruby:
+    version: rbx-2.2.1
