@@ -16,6 +16,11 @@ RSpec.describe User, type: :model do
   it { should respond_to(:admin) }
   it { should respond_to(:microposts) }
   it { should respond_to(:feed) }
+  it { should respond_to(:relationships) }
+  it { should respond_to(:followed_users) }
+  it { should respond_to(:following?) }
+  it { should respond_to(:follow!) }
+  it { should respond_to(:unfollow!) }
   it { should be_valid }
 
   it { should be_valid }
@@ -158,12 +163,55 @@ RSpec.describe User, type: :model do
       let(:unfollowed_post) do
         FactoryGirl.create(:micropost, user: FactoryGirl.create(:user))
       end
+      let(:followed_user) { FactoryGirl.create(:user) }
+
+      before do
+        @user.follow!(followed_user)
+        3.times { followed_user.microposts.create!(content: "Lorem ipsum") }
+      end
 
       describe '#feed' do
         subject { super().feed }
         it { should include(newer_micropost) }
         it { should include(older_micropost) }
         it { should_not include(unfollowed_post) }
+        it "should include" do
+          followed_user.microposts.each do |micropost|
+            should include(micropost)
+          end
+        end
+      end
+    end
+  end
+
+  describe "following" do
+    let(:other_user) { FactoryGirl.create(:user) }
+    before do
+      @user.save
+      @user.follow!(other_user)
+    end
+
+    it { should be_following(other_user) }
+    describe 'followed_users' do
+      subject { super().followed_users }
+      it { should include(other_user) }
+    end
+
+    describe "followed user" do
+      subject { other_user }
+      describe 'followers' do
+        subject { super().followers }
+        it { should include(@user) }
+      end
+    end
+
+    describe "and unfollowing" do
+      before { @user.unfollow!(other_user) }
+
+      it { should_not be_following(other_user) }
+      describe 'followed_users' do
+        subject { super().followed_users }
+        it { should_not include(other_user) }
       end
     end
   end
